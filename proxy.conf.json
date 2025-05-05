@@ -1,0 +1,55 @@
+{
+  "/hello": {
+    "target": "http://localhost:8222",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/hello": ""
+    }
+  },
+  "/api": {
+    "target": "http://localhost:8010",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/auth/*": {
+    "target": "http://localhost:9098",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/assets": {
+    "target": "http://localhost:4200",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/hello/api": {
+    "target": "http://localhost:8060",
+    "secure": false,
+    "pathRewrite": {
+      "^/hello/api": "/api"
+    },
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/hello/api/v1/Notifications": {
+    "target": "http://localhost:8222",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/hello/api": "/api"
+    }
+  },
+  "/hello/api/v1/Notifications/*": {
+    "target": "http://localhost:8222",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/hello/api": "/api"
+    }
+  }
+}

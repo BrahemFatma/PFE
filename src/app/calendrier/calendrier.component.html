@@ -1,6 +1,95 @@
-<div class="container">
-    <ngb-datepicker [(ngModel)]="model"></ngb-datepicker>
-    <br />
-    <p>Selected date: {{ model | json }}</p>
-  </div>
-  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Boxicons -->
+  <link href="https://cdn.jsdelivr.net/npm/boxicons/css/boxicons.min.css" rel="stylesheet">
+
+</head>
+<body>
+
+<div class="dashboard-container" [attr.data-theme]="isDarkMode ? 'dark' : 'light'">
+  <!-- SIDEBAR -->
+  <section id="sidebar">
+    <a href="#" class="brand">
+      <img src="Fichier-4@2x.png" alt="Logo">
+    </a>
+    <ul class="side-menu top">
+      <li>
+        <a [routerLink]="['/dashboard']">
+          <i class='bx bxs-dashboard'></i>
+          <span class="text">Dashboard</span>
+        </a>
+      </li>
+      <li >
+        <a [routerLink]="['/reunions']">
+          <i class='bx bxs-calendar-check'></i>
+          <span class="text">Gestion des Réunions</span>
+        </a>
+      </li>
+      <li >
+        <a [routerLink]="['/routines']">
+          <i class='bx bxs-check-square'></i>
+          <span class="text">Suivi des Routines</span>
+        </a>
+      </li>
+      <li >
+        <a [routerLink]="['/interventions']">
+          <i class='bx bxs-wrench'></i>
+          <span class="text">Suivi des Interventions</span>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bxs-chart'></i>
+          <span class="text">Analyse de Performance</span>
+        </a>
+      </li>
+    </ul>
+    <ul class="side-menu">
+      <li>
+        <a href="#">
+          <i class='bx bxs-cog'></i>
+          <span class="text">Settings</span>
+        </a>
+      </li>
+      <li>
+        <a  [routerLink]="['/auth/login']"class="logout">
+          <i class='bx bxs-log-out-circle'></i>
+          <span class="text">Logout</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+  <!-- SIDEBAR -->
+
+  <!-- CONTENT -->
+  <section id="content">
+ 
+
+    <!-- MAIN -->
+    <main>
+      <div class="container">
+        <ngb-datepicker [(ngModel)]="model" style="width: 100%; height: auto;"></ngb-datepicker>
+        <br />
+        <p>Selected date: {{ model | json }}</p>
+      </div>
+      
+
+      <!-- Add your component content for Gestion des Réunions here -->
+      <div class="meeting-content">
+        <!-- Display meeting-related content here -->
+      </div>
+    </main>
+    <!-- MAIN -->
+  </section>
+  <!-- CONTENT -->
+</div>
+
+
+
+</body>
+</html>
+

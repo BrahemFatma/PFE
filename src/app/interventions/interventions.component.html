@@ -1,1 +1,540 @@
-<p>interventions works!</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Boxicons -->
+  <link href="https://cdn.jsdelivr.net/npm/boxicons/css/boxicons.min.css" rel="stylesheet">
+
+  <title>Gestion des Interventions</title>
+</head>
+<body>
+
+<div class="dashboard-container" [attr.data-theme]="isDarkMode ? 'dark' : 'light'">
+  <!-- SIDEBAR -->
+  <section id="sidebar">
+    <a href="#" class="brand">
+      <img src="Fichier-4@2x.png" alt="Logo">
+    </a>
+    <ul class="side-menu top">
+      <li>
+        <a [routerLink]="['/dashboard']">
+          <i class='bx bxs-dashboard'></i>
+          <span class="text">Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a [routerLink]="['/reunions']">
+          <i class='bx bxs-calendar-check'></i>
+          <span class="text">Gestion des Réunions</span>
+        </a>
+      </li>
+      <li>
+        <a [routerLink]="['/routines']">
+          <i class='bx bxs-check-square'></i>
+          <span class="text">Suivi des tâches de routine</span>
+        </a>
+      </li>
+      <li class="active">
+        <a [routerLink]="['/interventions']">
+          <i class='bx bxs-wrench'></i>
+          <span class="text">Suivi des Interventions</span>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bxs-chart'></i>
+          <span class="text">Analyse de Performance</span>
+        </a>
+      </li>
+    </ul>
+    <ul class="side-menu">
+      <li>
+        <a href="#">
+          <i class='bx bxs-cog'></i>
+          <span class="text">Settings</span>
+        </a>
+      </li>
+      <li>
+        <a class="logout" (click)="logout()">
+          <i class='bx bxs-log-out-circle'></i>
+          <span class="text">Logout</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+  <!-- SIDEBAR -->
+
+  <section id="content">
+    <!-- MAIN -->
+    <main>
+      <div class="head-title">
+        <div class="left">
+          <h1>Gestion des Interventions</h1>
+          <ul class="breadcrumb">
+            <li>
+              <a href="#">Dashboard</a>
+            </li>
+            <li><i class='bx bx-chevron-right'></i></li>
+            <li>
+              <a class="active" href="#">Gestion des Interventions</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <ul class="box-info">
+        <li>
+          <i class='bx bxs-calendar'></i>
+          <span class="text">
+            <h3>{{ todayInterventions }}</h3>
+            <p>Interventions Planifiées Aujourd'hui</p>
+          </span>
+        </li>
+        <li>
+          <i class='bx bxs-hourglass'></i>
+          <span class="text">
+            <h3>{{ pendingInterventions }}</h3>
+            <p>Interventions En Attente</p>
+          </span>
+        </li>
+        <li>
+          <i class='bx bxs-check-circle'></i>
+          <span class="text">
+            <h3>{{ completedInterventions }}</h3>
+            <p>Interventions Terminées</p>
+          </span>
+        </li>
+        <li>
+          <i class='bx bxs-calendar-check'style="background: var(--dark-grey); color: #fff;" ></i>
+          <span class="text">
+            <h3>{{ totalInterventions }}</h3>
+            <p>Total Interventions</p>
+          </span>
+        </li>
+      </ul>
+      <div class="button-container">
+        <a href="javascript:void(0);" class="btn-download" (click)="exportInterventionsCsv()">
+          <i class='bx bxs-cloud-download'></i>
+          <span class="text">Exporter en csv</span>
+        </a>
+        <a href="javascript:void(0);" class="btn-download" (click)="generatePv(selectedIntervention?.id)">
+          <i class='bx bxs-file-pdf'></i>
+          <span class="text">Générer un PV</span>
+        </a>
+      </div>
+      
+      <!-- TABLE DATA -->
+      <div class="table-data">
+        <div class="order">
+          <div class="head">
+            <h3>Interventions récentes</h3>
+            <div class="controls-right">
+              <div class="search-container">
+                <input type="search" 
+                       [(ngModel)]="searchTerm" 
+                       (ngModelChange)="searchInterventions()"
+                       placeholder="Rechercher par client..."
+                       name="tableSearch"
+                       [class.show]="isTableSearchVisible">
+                <i class="bx bx-search" (click)="toggleTableSearch()" style="font-size: 24px;"></i>
+                <i class="bx bx-filter-alt" (click)="toggleFilterModal()" style="font-size: 24px; margin-left: 10px; cursor: pointer;" title="Filtrer"></i>
+              </div>
+              <!-- Only show Add button for managers and authorized roles -->
+              <button *ngIf="canManageInterventions" 
+                      (click)="openAddInterventionModal()" 
+                      class="btn-add-reunion">
+                <i class='bx bx-plus-circle' style="margin-right: 8px; font-size: 18px;"></i>
+                Ajouter une Intervention
+              </button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Responsable</th>
+                <th>Statut</th>
+                <th>Heure Début</th>
+                <th>Heure Fin</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let intervention of Interventions" 
+                  (click)="selectIntervention(intervention)" 
+                  [class.selected]="selectedIntervention === intervention">
+                <td>{{ intervention.client }}</td>
+                <td>{{ intervention.date | date:'dd-MM-yyyy' }}</td>
+                <td>
+                  <ng-container *ngIf="interventionResponsables[intervention.id!]?.length; else noResponsable">
+                    <span *ngFor="let user of interventionResponsables[intervention.id!]" class="participant-name">
+                      {{ user.nom }} {{ user.prenom }}
+                    </span>
+                  </ng-container>
+                  <ng-template #noResponsable>
+                    <span class="participant-name no-participant">Non assigné</span>
+                  </ng-template>
+                </td>
+                <td>
+                  <button class="status-button completed" *ngIf="intervention.statut === 'TERMINEE'">terminé</button>
+                  <button class="status-button pending" *ngIf="intervention.statut === 'EN_ATTENTE'">en attente</button>
+                  <button class="status-button process" *ngIf="intervention.statut === 'EN_COURS'">en cours</button>
+                </td>
+                <td>{{ intervention.heureDebutVisite }}</td>
+                <td>{{ intervention.heureFinVisite }}</td>
+                <td>
+                  <button class="btn-details" (click)="openDetailsModal(intervention, $event)">
+                    <i class='bx bx-info-circle'></i> Voir détails
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- Only show action buttons for managers and authorized roles -->
+          <div class="button-group" style="text-align: right; margin-top: 10px;" *ngIf="canManageInterventions">
+            <button (click)="deleteIntervention(selectedIntervention?.id)" class="btn btn-danger">
+              Supprimer l'intervention sélectionnée
+            </button>
+            <button (click)="updateIntervention(selectedIntervention?.id)" class="btn btn-warning" style="margin-left: 10px;">
+              Modifier l'intervention sélectionnée
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- END TABLE DATA -->
+
+      <!-- Modal pour ajouter ou modifier une intervention -->
+      <div class="modal-overlay" *ngIf="isModalOpen">
+        <div class="modal-content">
+          <h3>{{ selectedIntervention ? 'Modifier une intervention' : 'Ajouter une intervention' }}</h3>
+          <form (ngSubmit)="saveIntervention()">
+            <div class="form-group">
+              <label for="client">Client</label>
+              <select id="client" [(ngModel)]="newIntervention.clientId" name="client" required class="form-control">
+                <option value="">Sélectionnez un client</option>
+                <option *ngFor="let client of clients" [value]="client.id">
+                  {{ client.nom }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="description">Objectif</label>
+              <textarea id="description" [(ngModel)]="newIntervention.description" name="description" required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="date">Date</label>
+              <input 
+                type="date" 
+                id="date" 
+                name="date"
+                [ngModel]="formatDateForInput(newIntervention.date)"
+                (ngModelChange)="handleDateChange($event)"
+                required>
+            </div>
+            <div class="form-group">
+              <label for="statut">Statut</label>
+              <select id="statut" [(ngModel)]="newIntervention.statut" name="statut" required>
+                <option *ngFor="let statut of [StatutIntervention.EN_ATTENTE, StatutIntervention.EN_COURS, StatutIntervention.TERMINEE]" [value]="statut">
+                  {{ statut }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="heureDebutVisite">Heure Début</label>
+              <input type="time" id="heureDebutVisite" [(ngModel)]="newIntervention.heureDebutVisite" name="heureDebutVisite">
+            </div>
+            <div class="form-group">
+              <label for="heureFinVisite">Heure Fin</label>
+              <input type="time" id="heureFinVisite" [(ngModel)]="newIntervention.heureFinVisite" name="heureFinVisite">
+            </div>
+            <div class="form-group">
+              <label for="actionsMiseEnPlace">Actions Mises en Place</label>
+              <textarea id="actionsMiseEnPlace" [(ngModel)]="newIntervention.actionsMiseEnPlace" name="actionsMiseEnPlace"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="responsables">Responsables</label>
+              <div style="display: flex; flex-direction: column; width: 100%;">
+                <select id="responsables" 
+                        [(ngModel)]="selectedUserIds" 
+                        name="responsables" 
+                        class="form-control" 
+                        multiple 
+                        style="width: 100%; height: 200px; min-width: 350px;">
+                  <option *ngFor="let user of users" [value]="user.id">
+                    {{ user.nom }} {{ user.prenom }}
+                  </option>
+                </select>
+                <small class="form-text text-muted" style="margin-top: 5px;">
+                  Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs responsables
+                </small>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="utilisateurs">Utilisateurs</label>
+              <div *ngFor="let utilisateur of newIntervention.utilisateurs; let i = index">
+                <input type="text" [(ngModel)]="utilisateur.nomUtilisateur" placeholder="Nom Utilisateur" name="utilisateurNom{{i}}">
+                <input type="text" [(ngModel)]="utilisateur.service" placeholder="Service" name="utilisateurService{{i}}">
+                <textarea [(ngModel)]="utilisateur.pointsADiscuter" placeholder="Points à discuter (séparés par des virgules)" name="utilisateurPoints{{i}}"></textarea>
+              </div>
+              <button type="button" (click)="addUtilisateur()">Ajouter un utilisateur</button>
+            </div>
+            <div class="button-group">
+              <button type="submit" class="btn btn-success">{{ selectedIntervention ? 'Modifier' : 'Ajouter' }}</button>
+              <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal pour les détails de l'intervention -->
+      <div class="modal-overlay" *ngIf="isDetailsModalOpen">
+        <div class="modal-content details-modal">
+          <h3>Détails de l'intervention</h3>
+          <div class="details-content" *ngIf="selectedIntervention">
+            <div class="detail-group">
+              <h4>Objectif</h4>
+              <p>{{ selectedIntervention.description }}</p>
+            </div>
+            
+            <div class="detail-group">
+              <h4>Actions Mises en Place</h4>
+              <p>{{ selectedIntervention.actionsMiseEnPlace }}</p>
+            </div>
+            
+            <div class="detail-group">
+              <h4>Utilisateurs</h4>
+              <div class="users-list">
+                <div *ngFor="let utilisateur of selectedIntervention.utilisateurs" class="user-item">
+                  <h5>{{ utilisateur.nomUtilisateur }} ({{ utilisateur.service }})</h5>
+                  <ul>
+                    <li *ngFor="let point of getPointsAsArray(utilisateur.pointsADiscuter)">
+                      {{ point }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="button-group">
+            <button class="btn btn-secondary" (click)="closeDetailsModal()">Fermer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal pour les filtres -->
+      <div class="modal-overlay" *ngIf="isFilterModalOpen" style="background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(0px);">
+        <div class="modal-content filter-modal" style="box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); background: white; border-radius: 12px; border: 1px solid #ddd;">
+          <h3 style="color: #DB504A; text-align: center; margin-bottom: 30px;">Filtrer les interventions</h3>
+          <div class="form-group">
+            <label for="clientFilter">Client</label>
+            <select id="clientFilter" [(ngModel)]="filterClient" class="form-control">
+              <option value="">Tous les clients</option>
+              <option *ngFor="let client of uniqueClients" [value]="client">{{ client }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="responsableFilter">Responsable</label>
+            <select id="responsableFilter" [(ngModel)]="filterResponsable" class="form-control">
+              <option value="">Tous les responsables</option>
+              <option *ngFor="let resp of uniqueResponsables" [value]="resp.id">
+                {{ resp.nom }} {{ resp.prenom }}
+              </option>
+            </select>
+          </div>
+          <div class="button-group" style="margin-top: 20px;">
+            <button (click)="applyFilters()" class="btn btn-primary" style="background-color: #DB504A;">Appliquer</button>
+            <button (click)="resetFilters()" class="btn btn-secondary">Réinitialiser</button>
+            <button (click)="closeFilterModal()" class="btn btn-danger" style="background-color: grey;">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+</div>
+
+<script src="gestion-des-interventions.component.ts"></script>
+
+<style>
+.selected {
+    background-color: #f0f0f0; /* Couleur de fond pour la ligne sélectionnée */
+}
+
+.modal-overlay {
+  position: fixed; /* Fixed positioning */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  display: flex; /* Use flexbox to center the modal */
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  z-index: 1000; /* Ensure it appears above other content */
+  overflow-y: auto; /* Add scroll support for overflowing content */
+}
+
+.modal-content {
+  background: white; /* Background color for the modal */
+  padding: 30px; /* Padding inside the modal */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+  width: 800px; /* Increased width of the modal */
+  display: flex; /* Use flexbox for layout */
+  flex-direction: column; /* Stack elements vertically */
+  align-items: left; /* Center elements horizontally */
+}
+
+.form-group {
+  margin-bottom: 25px; /* Space between form groups */
+  width: 100%; /* Make form groups take full width */
+  display: flex; /* Use flexbox for layout */
+  justify-content: space-between; /* Space elements horizontally */
+}
+
+.form-group label {
+  flex: 1; /* Allow label to take space */
+  margin-right: 20px; /* Space between label and input */
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  flex: 2; /* Allow input to take more space */
+  font-size: 16px; /* Increase font size */
+  padding: 10px; /* Increase padding for larger input fields */
+}
+
+.button-group {
+  display: flex; /* Use flexbox for button layout */
+  justify-content: flex-end; /* Align buttons to the right */
+  width: 100%; /* Make button group take full width */
+}
+
+.button-group button {
+  margin-left: 15px; /* Space between buttons */
+  font-size: 16px; /* Increase font size for buttons */
+  padding: 10px 20px; /* Increase padding for buttons */
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+#sidebar, main {
+  transition: background-color 0s !important;
+}
+
+[data-theme="dark"] {
+  transition: background-color 0s !important;
+}
+
+[data-theme="light"] {
+  transition: background-color 0s !important;
+}
+
+.btn-details {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.details-modal {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.details-modal h3 {
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  text-align: center; /* Center the title */
+  width: 100%; /* Ensure full width */
+}
+
+.detail-group {
+  margin-bottom: 20px;
+}
+
+.detail-group h4 {
+  color: #ff0000; /* Changed to red */
+  margin-bottom: 10px;
+  font-weight: bold; /* Optional: make the title bold */
+}
+
+.users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.user-item {
+  background-color: #e6f3ff; /* Bleu ciel clair */
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #b3d9ff; /* Bordure bleu ciel */
+}
+
+.user-item h5 {
+  margin: 0 0 10px 0;
+  color: #2e5882; /* Bleu plus foncé pour le texte */
+}
+
+.user-item ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.participant-name {
+  display: inline-block;
+  margin-right: 5px;
+  padding: 2px 8px;
+  background-color: #e6f3ff; /* Bleu ciel clair */
+  border: 1px solid #b3d9ff; /* Bordure bleu ciel */
+  border-radius: 3px;
+  color: #2e5882; /* Bleu plus foncé pour le texte */
+}
+
+.no-participant {
+  background-color: #ffe6e6;
+  border-color: #ffb3b3;
+  color: #cc0000;
+}
+
+.filter-modal {
+  max-width: 600px;  /* Augmenté de 400px à 600px */
+  width: 90%;        /* Ajouté pour garantir la réactivité */
+  margin: 0 auto;    /* Centrer horizontalement */
+}
+
+.filter-modal .form-group {
+  margin-bottom: 20px;
+  gap: 20px;         /* Ajouté pour plus d'espace entre label et select */
+}
+
+.filter-modal select {
+  width: 100%;
+  padding: 12px;     /* Augmenté de 8px à 12px */
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 16px;   /* Ajouté pour une meilleure lisibilité */
+}
+
+.bx-filter-alt:hover {
+  color: #3C91E6;
+}
+</style>
+
+</body>
+</html>
+

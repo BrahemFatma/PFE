@@ -9,7 +9,6 @@ import { RoutinesComponent } from './routines/routines.component';
 import { UtilisateursComponent } from './utilisateurs/utilisateurs.component';
 import { LoginComponent } from './auth/login/login.component';
 import { RegisterComponent } from './auth/register/register.component';
-
 const routes: Routes = [
   { path: 'calendrier', component: CalendrierComponent },
 
@@ -21,7 +20,9 @@ const routes: Routes = [
   { path: 'auth/login', component: LoginComponent }, 
   { path: 'auth/register', component: RegisterComponent },  
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: '**', component: PageNotFoundComponent } 
+  { path: '**', component: PageNotFoundComponent } ,
+  { path: 'calendrier', component: CalendrierComponent }
+
 ];
 
 @NgModule({

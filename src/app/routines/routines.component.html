@@ -1,1 +1,385 @@
-<p>routines works!</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Boxicons -->
+  <link href="https://cdn.jsdelivr.net/npm/boxicons/css/boxicons.min.css" rel="stylesheet">
+
+  <title>Gestion des Routines</title>
+</head>
+<body>
+
+  <div class="dashboard-container" [attr.data-theme]="isDarkMode ? 'dark' : 'light'">
+    <!-- SIDEBAR -->
+    <section id="sidebar">
+      <a href="#" class="brand">
+        <img src="Fichier-4@2x.png" alt="Logo">
+      </a>
+      <ul class="side-menu top">
+        <li>
+          <a [routerLink]="['/dashboard']">
+            <i class='bx bxs-dashboard'></i>
+            <span class="text">Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/reunions']">
+            <i class='bx bxs-calendar-check'></i>
+            <span class="text">Gestion des Réunions</span>
+          </a>
+        </li>
+        <li class="active">
+          <a [routerLink]="['/routines']">
+            <i class='bx bxs-check-square'></i>
+            <span class="text">Suivi des tâches de routine</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/interventions']">
+            <i class='bx bxs-wrench'></i>
+            <span class="text">Suivi des Interventions</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <i class='bx bxs-chart'></i>
+            <span class="text">Analyse de Performance</span>
+          </a>
+        </li>
+      </ul>
+      <ul class="side-menu">
+        <li>
+          <a href="#">
+            <i class='bx bxs-cog'></i>
+            <span class="text">Settings</span>
+          </a>
+        </li>
+        <li>
+          <a class="logout" (click)="logout()">
+            <i class='bx bxs-log-out-circle'></i>
+            <span class="text">Logout</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+    <!-- SIDEBAR -->
+
+    <section id="content">
+      <!-- MAIN -->
+      <main>
+        <div class="head-title">
+          <div class="left">
+            <h1>Gestion des tâches de routine</h1>
+            <ul class="breadcrumb">
+              <li>
+                <a href="#">Dashboard</a>
+              </li>
+              <li><i class='bx bx-chevron-right'></i></li>
+              <li>
+                <a class="active" href="#">Gestion des tâches de routine</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <ul class="box-info">
+          <li>
+            <i class='bx bxs-calendar'></i>
+            <span class="text">
+              <h3>{{ todayRoutines }}</h3>
+              <p>Routines Planifiées Aujourd'hui</p>
+            </span>
+          </li>
+          <li>
+            <i class='bx bxs-hourglass'></i>
+            <span class="text">
+              <h3>{{ pendingRoutines }}</h3>
+              <p>Routines En Attente</p>
+            </span>
+          </li>
+          <li>
+            <i class='bx bxs-check-circle'></i>
+            <span class="text">
+              <h3>{{ completedRoutines }}</h3>
+              <p>Routines Terminées</p>
+            </span>
+          </li>
+          <li>
+            <i class='bx bxs-calendar-check'style="background: var(--dark-grey); color: #fff;" ></i>
+            <span class="text">
+              <h3>{{ totalRoutines }}</h3>
+              <p>Total Routines</p>
+            </span>
+          </li>
+        </ul>
+        <a href="javascript:void(0);" class="btn-download" (click)="exportRoutinesCsv()">
+          <i class='bx bxs-cloud-download'></i>
+          <span class="text">Exporter en csv</span>
+        </a>
+        
+        <!-- TABLE DATA -->
+        <div class="table-data">
+          <div class="order">
+            <div class="head">
+              <h3>Routines récentes</h3>
+              <div class="controls-right">
+                <div class="search-container">
+                  <input type="search" 
+                         [(ngModel)]="searchTerm" 
+                         (ngModelChange)="searchRoutines()"
+                         placeholder="Rechercher par nom de tâche..."
+                         name="tableSearch"
+                         [class.show]="isTableSearchVisible">
+                  <i class="bx bx-search" (click)="toggleTableSearch()" style="font-size: 24px;"></i>
+                </div>
+                <i class="bx bx-filter-alt" (click)="openFilterModal()" style="font-size: 24px;"></i>
+                <button *ngIf="canModifyRoutines()" (click)="openAddRoutineModal()" class="btn-add-reunion">
+                  <i class='bx bx-plus-circle'></i>
+                  Ajouter une Routine
+                </button>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom de la tâche</th>
+                  <th>Description</th>
+                  <th>Date de début</th>
+                  <th>Date de fin</th>
+                  <th>Responsable</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let routine of Routines" 
+                    (click)="selectRoutine(routine)" 
+                    [class.selected]="selectedRoutine === routine">
+                  <td>{{ routine.nomTache }}</td>
+                  <td>{{ routine.description }}</td>
+                  <td>{{ routine.dateDebut | date:'dd-MM-yyyy' }}</td>
+                  <td>{{ routine.dateFin | date:'dd-MM-yyyy' }}</td>
+                  <td>
+                 <div style="display: flex; flex-wrap: wrap; gap: 5px; min-height: 30px; align-items: center;">
+      <div *ngIf="routineResponsables[routine.id!]">
+        <ng-container *ngIf="routineResponsables[routine.id!].length > 0; else noResponsables">
+          <span *ngFor="let user of routineResponsables[routine.id!]" class="participant-name">
+            {{ user.prenom }} {{ user.nom }}
+          </span>
+        </ng-container>
+        <ng-template #noResponsables>
+          <span class="non-assigned-badge">Non assigné</span>
+        </ng-template>
+      </div>
+    </div>
+                  </td>
+                  <td>
+                    <button class="status-button completed" *ngIf="routine.statut === 'TERMINE'">Terminé</button>
+                    <button class="status-button pending" *ngIf="routine.statut === 'A_FAIRE'">À faire</button>
+                    <button class="status-button process" *ngIf="routine.statut === 'EN_COURS'">En cours</button>
+                  </td>
+                
+                </tr>
+              </tbody>
+            </table>
+            <div class="button-group" style="text-align: right; margin-top: 10px;" *ngIf="canModifyRoutines()">
+              <button (click)="deleteRoutine(selectedRoutine?.id)" class="btn btn-danger">Supprimer la routine sélectionnée</button>
+              <button (click)="openEditRoutineModal()" class="btn btn-warning" style="margin-left: 10px;">
+                Modifier la routine sélectionnée
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- END TABLE DATA -->
+
+        <!-- Modal pour ajouter ou modifier une routine -->
+        <div class="modal-overlay" *ngIf="isModalOpen" style="background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(0px);">
+          <div class="modal-content" style="width: 1000px; max-width: 95%; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); border-radius: 12px; border: 1px solid #ddd;">
+            <h3 style="color: #DB504A; text-align: center; margin-bottom: 30px;">{{ selectedRoutine ? 'Modifier une routine' : 'Ajouter une routine' }}</h3>
+            <form (ngSubmit)="saveRoutine()" style="margin-top: 15px;">
+              <div class="form-group">
+                <label for="nomTache">Nom de la tâche</label>
+                <input type="text" id="nomTache" [(ngModel)]="newRoutine.nomTache" name="nomTache" required>
+              </div>
+              <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" [(ngModel)]="newRoutine.description" name="description" required></textarea>
+              </div>
+              <div class="form-group">
+                <label for="dateDebut">Date de début</label>
+                <input type="date" id="dateDebut" [ngModel]="newRoutine.dateDebut | date:'yyyy-MM-dd'" (ngModelChange)="newRoutine.dateDebut = $event" name="dateDebut" required>
+              </div>
+              <div class="form-group">
+                <label for="dateFin">Date de fin</label>
+                <input type="date" id="dateFin" [ngModel]="newRoutine.dateFin | date:'yyyy-MM-dd'" (ngModelChange)="newRoutine.dateFin = $event" name="dateFin" required>
+              </div>
+              <div class="form-group">
+                <label for="statut">Statut</label>
+                <select id="statut" [(ngModel)]="newRoutine.statut" name="statut" required>
+                  <option *ngFor="let statut of [StatutRoutine.A_FAIRE, StatutRoutine.EN_COURS, StatutRoutine.TERMINE]" [value]="statut">
+                    {{ statut }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="responsables">Responsables</label>
+                <select id="responsables" [(ngModel)]="selectedUserIds" name="responsables" multiple 
+                        style="width: 100%; height: 200px; min-width: 350px;"
+                        (change)="logSelectedUsers()">
+                  <option *ngFor="let user of users" [value]="user.id">
+                    {{ user.nom }} {{ user.prenom }} 
+                    
+                  </option>
+                </select>
+                <small style="display: block; margin-top: 5px; color: #666;">
+                  Sélectionnés: {{ selectedUserIds.length }} responsable(s)
+                </small>
+              </div>
+              <div class="button-group">
+                <button type="submit" class="btn btn-success" style="background-color: #FD7238; color: white;">{{ selectedRoutine ? 'Modifier' : 'Ajouter' }}</button>
+                <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Modal de filtrage -->
+        <div class="modal-overlay" *ngIf="isFilterModalOpen">
+          <div class="modal-content filter-modal">
+            <div class="filter-header">
+              <h3 style="color: #DB504A; text-align: center; margin-bottom: 30px;">Filtrer les tâches routine</h3>
+            </div>
+            
+            <div class="filter-body">
+              <form (ngSubmit)="applyFilters()">
+                <div class="filter-section">
+                  <h4>Période</h4>
+                  <div class="date-filters">
+                    <div class="form-group">
+                      <label for="dateDebut">Date de début</label>
+                      <input type="date" id="dateDebut" [(ngModel)]="filterParams.dateDebut" name="dateDebut">
+                    </div>
+                    <div class="form-group">
+                      <label for="dateFin">Date de fin</label>
+                      <input type="date" id="dateFin" [(ngModel)]="filterParams.dateFin" name="dateFin">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="filter-section">
+                  <h4>Filtres additionnels</h4>
+                  <div class="form-group">
+                    <label for="responsable">Responsable</label>
+                    <select id="responsable" [(ngModel)]="filterParams.responsableId" name="responsable">
+                      <option value="">Tous les responsables</option>
+                      <option *ngFor="let user of users" [value]="user.id">
+                        {{ user.nom }} {{ user.prenom }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="statut">Statut</label>
+                    <select id="statut" [(ngModel)]="filterParams.statut" name="statut">
+                      <option value="">Tous les statuts</option>
+                      <option *ngFor="let statut of [StatutRoutine.A_FAIRE, StatutRoutine.EN_COURS, StatutRoutine.TERMINE]" [value]="statut">
+                        {{ statut }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="button-group" style="margin-top: 20px;">
+                  <button (click)="applyFilters()" class="btn btn-primary" style="background-color: #DB504A;">Appliquer</button>
+                  <button (click)="resetFilters()" class="btn btn-secondary">Réinitialiser</button>
+                  <button (click)="closeFilterModal()" class="btn btn-danger" style="background-color: grey;">Fermer</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+      <!-- MAIN -->
+    </section>
+  </div>
+
+  <script src="gestion-des-routines.component.ts"></script>
+
+  <style>
+  #sidebar, main {
+    transition: background-color 0s !important;
+  }
+
+  [data-theme="dark"] {
+    transition: background-color 0s !important;
+  }
+
+  [data-theme="light"] {
+    transition: background-color 0s !important;
+  }
+
+  .selected {
+      background-color: #f0f0f0; /* Couleur de fond pour la ligne sélectionnée */
+  }
+
+  .modal-overlay {
+    position: fixed; /* Fixed positioning */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    display: flex; /* Use flexbox to center the modal */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    z-index: 1000; /* Ensure it appears above other content */
+  }
+
+  .modal-content {
+    background: white; /* Background color for the modal */
+    padding: 30px; /* Padding inside the modal */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+    width: 800px; /* Increased width of the modal */
+    display: flex; /* Use flexbox for layout */
+    flex-direction: column; /* Stack elements vertically */
+    align-items: left; /* Center elements horizontally */
+  }
+
+  .form-group {
+    margin-bottom: 25px; /* Space between form groups */
+    width: 100%; /* Make form groups take full width */
+    display: flex; /* Use flexbox for layout */
+    justify-content: space-between; /* Space elements horizontally */
+  }
+
+  .form-group label {
+    flex: 1; /* Allow label to take space */
+    margin-right: 20px; /* Space between label and input */
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    flex: 2; /* Allow input to take more space */
+    font-size: 16px; /* Increase font size */
+    padding: 10px; /* Increase padding for larger input fields */
+  }
+
+  .button-group {
+    display: flex; /* Use flexbox for button layout */
+    justify-content: flex-end; /* Align buttons to the right */
+    width: 100%; /* Make button group take full width */
+  }
+
+  .button-group button {
+    margin-left: 15px; /* Space between buttons */
+    font-size: 16px; /* Increase font size for buttons */
+    padding: 10px 20px; /* Increase padding for buttons */
+  }
+  </style>
+
+</body>
+</html>
+

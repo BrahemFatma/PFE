@@ -1,15 +1,27 @@
-import { Component, OnInit, Renderer2 } from '@angular/core';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { ThemeService } from '../services/theme.service';
+import { FormsModule } from '@angular/forms';
 import { CalendarEvent, CalendarView } from 'angular-calendar';
 import { startOfDay } from 'date-fns';
 import { CalendarModule, DateAdapter } from 'angular-calendar';
 import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
+import { KeycloakService } from 'keycloak-angular';
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css']
+  styleUrls: ['./dashboard.component.css'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    CalendarModule
+  ]
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
   view: CalendarView = CalendarView.Month;
   CalendarView = CalendarView;
   viewDate: Date = new Date();
@@ -23,16 +35,15 @@ export class DashboardComponent implements OnInit {
   
   currentDate: string = '';
   showCalendrier = false;
-  isDarkMode = false;
+  isDarkMode: boolean = false;
   calendarVisible = false;
 
-  constructor(private renderer: Renderer2) {
-    this.currentDate = this.getCurrentDate();
-    const savedTheme = localStorage.getItem('theme');
-    this.isDarkMode = savedTheme === 'dark';
-    if (this.isDarkMode) {
-      this.renderer.addClass(document.body, 'dark');
-    }
+  constructor(private keycloakService: KeycloakService,
+    private themeService: ThemeService
+  ) {
+    this.themeService.isDarkMode$.subscribe(
+      (isDark: boolean) => this.isDarkMode = isDark
+    );
   }
 
   ngOnInit() {
@@ -40,16 +51,28 @@ export class DashboardComponent implements OnInit {
     this.toggleSidebar();
     this.toggleSearchForm();
     this.handleResponsiveDesign();
-  }
+   
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        this.isDarkMode = true;
+        document.body.setAttribute('data-theme', 'dark');
+        document.body.style.backgroundColor = 'var(--grey)';
+      } else {
+        this.isDarkMode = false;
+        document.body.setAttribute('data-theme', 'light');
+        document.body.style.backgroundColor = 'var(--light)';
+      }
+    }
+    
+  
 
-  // Méthode pour gérer les événements sur le menu latéral
   addSideMenuClickListener() {
     const allSideMenu = document.querySelectorAll('#sidebar .side-menu.top li a');
   
     allSideMenu.forEach(item => {
       const li = item.parentElement;
       
-      if (li) {  // Vérification que 'li' n'est pas null
+      if (li) {
         item.addEventListener('click', function () {
           allSideMenu.forEach(i => {
             const parent = i.parentElement;
@@ -64,7 +87,6 @@ export class DashboardComponent implements OnInit {
   }
   
 
-  // TOGGLE SIDEBAR
   toggleSidebar() {
     const menuBar = document.querySelector('#content nav .bx.bx-menu');
     const sidebar = document.getElementById('sidebar');
@@ -74,7 +96,6 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // Gérer l'affichage du formulaire de recherche
   toggleSearchForm() {
     const searchButton = document.querySelector('#content nav form .form-input button');
     const searchButtonIcon = document.querySelector('#content nav form .form-input button .bx');
@@ -93,7 +114,6 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // Gérer la responsivité
   handleResponsiveDesign() {
     const sidebar = document.getElementById('sidebar');
     const searchButtonIcon = document.querySelector('#content nav form .form-input button .bx');
@@ -114,19 +134,12 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // Toggle theme
-  toggleTheme() {
-    this.isDarkMode = !this.isDarkMode;
-    if (this.isDarkMode) {
-      this.renderer.addClass(document.body, 'dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      this.renderer.removeClass(document.body, 'dark');
-      localStorage.setItem('theme', 'light');
-    }
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
+  
+  
 
-  // Méthode pour obtenir la date actuelle
   getCurrentDate() {
     const today = new Date();
     const options: Intl.DateTimeFormatOptions = { 
@@ -143,9 +156,9 @@ export class DashboardComponent implements OnInit {
     const calendarElement = document.getElementById('calendarSection');
     if (calendarElement) {
       if (this.calendarVisible) {
-        calendarElement.classList.add('show'); // Affiche le calendrier avec animation
+        calendarElement.classList.add('show');
       } else {
-        calendarElement.classList.remove('show'); // Cache le calendrier avec animation
+        calendarElement.classList.remove('show');
       }
     }
   }
@@ -153,5 +166,8 @@ export class DashboardComponent implements OnInit {
 
   setView(view: CalendarView) {
     this.view = view;
+  }
+  logout(){
+    this.keycloakService.logout();
   }
 }

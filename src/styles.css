@@ -1,1 +1,17 @@
 /* You can add global styles to this file, and also import other style files */
+
+body {
+  transition: background-color 0.3s ease;
+}
+
+[data-theme="dark"] {
+  transition: all 0.3s ease;
+}
+
+[data-theme="light"] {
+  transition: all 0.3s ease;
+}
+
+.dashboard-container {
+  transition: all 0.3s ease;
+}

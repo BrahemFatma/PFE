@@ -1,1 +1,365 @@
-<p>reunions works!</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Boxicons -->
+  <link href="https://cdn.jsdelivr.net/npm/boxicons/css/boxicons.min.css" rel="stylesheet">
+
+  <title>Gestion des Réunions</title>
+</head>
+<body>
+
+<div class="dashboard-container" [attr.data-theme]="isDarkMode ? 'dark' : 'light'">
+  <!-- SIDEBAR -->
+  <section id="sidebar">
+    <a href="#" class="brand">
+      <img src="Fichier-4@2x.png" alt="Logo">
+    </a>
+    <ul class="side-menu top">
+      <li>
+        <a [routerLink]="['/dashboard']">
+          <i class='bx bxs-dashboard'></i>
+          <span class="text">Dashboard</span>
+        </a>
+      </li>
+      <li class="active">
+        <a [routerLink]="['/reunions']">
+          <i class='bx bxs-calendar-check'></i>
+          <span class="text">Gestion des Réunions</span>
+        </a>
+      </li>
+      <li>
+        <a [routerLink]="['/routines']">
+          <i class='bx bxs-check-square'></i>
+          <span class="text">Suivi des tâches de routine</span>
+        </a>
+      </li>
+      <li>
+        <a [routerLink]="['/interventions']">
+          <i class='bx bxs-wrench'></i>
+          <span class="text">Suivi des Interventions</span>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bxs-chart'></i>
+          <span class="text">Analyse de Performance</span>
+        </a>
+      </li>
+    </ul>
+    <ul class="side-menu">
+      <li>
+        <a href="#">
+          <i class='bx bxs-cog'></i>
+          <span class="text">Settings</span>
+        </a>
+      </li>
+      <li>
+        <a class="logout" (click)="logout()">
+          <i class='bx bxs-log-out-circle'></i>
+          <span class="text">Logout</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+  <!-- SIDEBAR -->
+
+  <section id="content">
+    <!-- MAIN -->
+    <main>
+      <div class="head-title">
+        <div class="left">
+          <h1>Gestion des Réunions</h1>
+          <ul class="breadcrumb">
+            <li>
+              <a href="#">Dashboard</a>
+            </li>
+            <li><i class='bx bx-chevron-right'></i></li>
+            <li>
+              <a class="active" href="#">Gestion des Réunions</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <ul class="box-info">
+        
+        <li>
+          <i class='bx bxs-calendar'></i>
+          <span class="text">
+            <h3>{{ todayReunions }}</h3>
+            <p>Réunions Planifiées Aujourd'hui</p>
+          </span>
+        </li>
+        <li>
+          <i class='bx bxs-calendar-check'></i>
+          <span class="text">
+            <h3>{{ totalReunions }}</h3>
+            <p>Total Réunions</p>
+          </span>
+        </li>
+        <li>
+          <i class='bx bxs-calendar-plus'></i>
+          <span class="text">
+            <h3>{{ upcomingReunions }}</h3>
+            <p>Réunions à Venir</p>
+          </span>
+        </li>
+      </ul>
+      <div class="button-group">
+        <a href="javascript:void(0);" class="btn-download" (click)="exportReunionsCsv()">
+          <i class='bx bxs-cloud-download'></i>
+          <span class="text">Exporter en csv</span>
+        </a>
+        <a href="javascript:void(0);" class="btn-download" (click)="generateReport(selectedReunion?.id)">
+          <i class='bx bxs-file-pdf'></i>
+          <span class="text">Générer PV</span>
+        </a>
+      </div>
+      
+<!-- TABLE DATA -->
+<div class="table-data">
+  <!-- Réunions -->
+  <div class="order">
+      <div class="head">
+          <h3>Réunions récentes</h3>
+          <div class="search-container">
+              <input type="search" 
+                     [(ngModel)]="searchTerm" 
+                     (ngModelChange)="searchReunions()"
+                     placeholder="Rechercher par titre..."
+                     name="tableSearch"
+                     [class.show]="isTableSearchVisible">
+              <i class="bx bx-search" (click)="toggleTableSearch()"></i>
+              <i class="bx bx-filter-alt" (click)="toggleFilterModal()" style="font-size: 24px; margin-left: 10px; cursor: pointer;" title="Filtrer"></i>
+          </div>
+          <!-- N'afficher le bouton que pour les rôles autorisés -->
+          <button *ngIf="canManageReunions" (click)="openModal()" class="btn-add-reunion">
+            <i class='bx bx-plus-circle' style="margin-right: 8px; font-size: 18px;"></i>
+            Ajouter une réunion
+          </button>
+      </div>
+      <table>
+          <thead>
+            <tr>
+              <th>Titre</th>
+              <th>Description</th>
+              <th>Date</th>
+              <th>Heure</th>
+              <th>Lieu</th>
+              <th>PV</th>
+              <th>Documents</th>
+              <th>Participants</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let reunion of filteredReunions" 
+                (click)="selectedReunion = reunion" 
+                [class.selected]="selectedReunion === reunion">
+              <td><p>{{ reunion.titre }}</p></td>
+              <td>{{ reunion.description }}</td>
+              <td>{{ reunion.date | date:'dd-MM-yyyy' }}</td>
+              <td>{{ reunion.heure }}</td>
+              <td>{{ reunion.lieu }}</td>
+              <td>{{ reunion.pv }}</td>
+              <td>
+                <a *ngIf="reunion.documents && reunion.id" [href]="getDocumentUrl(reunion.id)" target="_blank">
+                  Afficher le document
+                </a>
+                <span *ngIf="!reunion.documents">Aucun document</span>
+              </td>
+              <td>
+                <span *ngIf="reunion.participants && reunion.participants.length > 0">
+                  <span *ngFor="let participant of reunion.participants" class="participant-name">
+                    {{ participant }}
+                  </span>
+                </span>
+                <span *ngIf="!reunion.participants || reunion.participants.length === 0">
+                  Aucun participant
+                </span>
+              </td>
+              <td>
+                <span [ngClass]="{
+                    'status completed': reunion.status === 'Terminé',
+                    'status pending': reunion.status === 'En attente',
+                    'status process': reunion.status === 'En cours'
+                }">
+                    {{ reunion.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+      </table>
+      <!-- N'afficher les boutons que pour les rôles autorisés -->
+      <div class="button-group" style="text-align: right; margin-top: 10px;" *ngIf="canManageReunions">
+          <button (click)="deleteReunion(selectedReunion?.id)" class="btn btn-danger">Supprimer la réunion sélectionnée</button>
+          <button (click)="selectedReunion ? openDocumentModal(selectedReunion) : null" class="btn btn-success" style="margin-left: 10px;">Ajouter un document</button>
+          <button (click)="editReunion(selectedReunion)" class="btn btn-warning" style="margin-left: 10px;">Modifier la réunion sélectionnée</button>
+      </div>
+  </div>
+
+  <!-- Modal pour ajouter un document -->
+  <div class="modal-overlay" *ngIf="isDocumentModalOpen" style="background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(0px);">
+    <div class="modal-content" style="box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); background: white; border-radius: 12px; border: 1px solid #ddd;">
+      <h3 style="color: #DB504A; text-align: center; margin-bottom: 30px;">Ajouter un document à la réunion</h3>
+      <form (ngSubmit)="addDocument()" style="margin-top: 15px;">
+        <div class="form-group">
+          <label for="document">Document</label>
+          <input type="file" id="document" (change)="onDocumentSelected($event)" name="document" required>
+        </div>
+        <div class="button-group">
+          <button type="submit" class="btn btn-success" style="background-color: #DB504A;">Ajouter</button>
+          <button type="button" class="btn btn-secondary" (click)="closeDocumentModal()">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal pour ajouter ou modifier une réunion -->
+<div class="modal-overlay" *ngIf="isModalOpen" style="background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(0px);">
+  <div class="modal-content" style="box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); background: white; border-radius: 12px; border: 1px solid #ddd;">
+    <h3 style="color: #DB504A; text-align: center; margin-bottom: 30px;">{{ selectedReunion ? 'Modifier une réunion' : 'Ajouter une réunion' }}</h3>
+    <form (ngSubmit)="selectedReunion ? updateReunion() : addReunion()" style="margin-top: 15px;">
+      <div class="form-group">
+        <label for="titre">Titre</label>
+        <input type="text" id="titre" [(ngModel)]="newReunion.titre" name="titre" required>
+      </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" [(ngModel)]="newReunion.description" name="description" required></textarea>
+      </div>
+      <div class="form-group">
+        <label for="date">Date</label>
+        <input type="date" id="date" [(ngModel)]="newReunion.date" name="date" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="heure">Heure</label>
+        <input type="time" id="heure" [(ngModel)]="newReunion.heure" name="heure" required>
+      </div>
+      <div class="form-group">
+        <label for="lieu">Lieu</label>
+        <input type="text" id="lieu" [(ngModel)]="newReunion.lieu" name="lieu" required>
+      </div>
+      <div class="form-group" *ngIf="!selectedReunion">
+        <label for="participants">Participants</label>
+        <div style="display: flex; flex-direction: column; width: 100%;">
+          <select id="participants" [(ngModel)]="selectedUserIds" name="participants" class="form-control" multiple style="width: 100%; height: 200px; min-width: 350px;">
+            <option *ngFor="let user of users" [value]="user.id">
+              {{ user.nom }} {{ user.prenom }}
+            </option>
+          </select>
+          <small class="form-text text-muted" style="margin-top: 5px;">Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs participants</small>
+        </div>
+      </div>
+      <div class="form-group" *ngIf="selectedReunion">
+        <label for="pv">Procès-verbal</label>
+        <textarea id="pv" [(ngModel)]="newReunion.pv" name="pv"></textarea>
+      </div>
+      
+      <div class="button-group">
+        <button type="submit" class="btn btn-success" style="background-color: #DB504A;">{{ selectedReunion ? 'Modifier' : 'Ajouter' }}</button>
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal pour filtrer les réunions -->
+<div class="modal-overlay" *ngIf="isFilterModalOpen" style="background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(0px);">
+  <div class="modal-content filter-modal" style="box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); background: white; border-radius: 12px; border: 1px solid #ddd;">
+    <h3 style="color: #DB504A; text-align: center; margin-bottom: 30px;">Filtrer les réunions</h3>
+    <div class="form-group">
+      <label for="titreFilter">Titre</label>
+      <select id="titreFilter" [(ngModel)]="filterTitre" class="form-control">
+        <option value="">Tous les titres</option>
+        <option *ngFor="let titre of uniqueTitres" [value]="titre">{{ titre }}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="dateFilter">Date</label>
+      <select id="dateFilter" [(ngModel)]="filterDate" class="form-control">
+        <option value="">Toutes les dates</option>
+        <option *ngFor="let date of uniqueDates" [value]="date">
+          {{ date | date:'dd/MM/yyyy' }}
+        </option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="participantFilter">Participant</label>
+      <select id="participantFilter" [(ngModel)]="filterParticipant" class="form-control">
+        <option value="">Tous les participants</option>
+        <option *ngFor="let part of uniqueParticipants" [value]="part.id">
+          {{ part.nom }} {{ part.prenom }}
+        </option>
+      </select>
+    </div>
+    <div class="button-group" style="margin-top: 20px;">
+      <button (click)="applyFilters()" class="btn btn-primary" style="background-color: #DB504A;">Appliquer</button>
+      <button (click)="resetFilters()" class="btn btn-secondary">Réinitialiser</button>
+      <button (click)="closeFilterModal()" class="btn btn-danger" style="background-color: grey;">Fermer</button>
+    </div>
+  </div>
+</div>
+
+ 
+</div>
+<!-- END TABLE DATA -->
+
+
+
+
+      <!-- Add your component content for Gestion des Réunions here -->
+      <div class="meeting-content">
+        <!-- Display meeting-related content here -->
+      </div>
+    </main>
+  </section>
+</div>
+
+<script src="gestion-des-reunions.component.ts"></script>
+
+<style>
+.selected {
+    background-color: #f0f0f0; /* Couleur de fond pour la ligne sélectionnée */
+}
+
+.calendar-container {
+  position: absolute;
+  top: 60px; /* Ajustez selon vos besoins */
+  left: 20px; /* Ajustez selon vos besoins */
+  width: 300px;
+  background: var(--light);
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transform: scale(0.95);
+  opacity: 0;
+  transition: all 0.3s ease;
+  visibility: hidden; /* Cacher par défaut */
+}
+
+.calendar-container.show {
+  visibility: visible; /* Afficher quand la classe 'show' est ajoutée */
+  transform: scale(1);
+  opacity: 1;
+}
+
+#sidebar, main {
+  transition: background-color 0s !important;
+}
+
+[data-theme="dark"] {
+  transition: background-color 0s !important;
+}
+
+[data-theme="light"] {
+  transition: background-color 0s !important;
+}
+</style>
+
+</body>
+</html>
+
